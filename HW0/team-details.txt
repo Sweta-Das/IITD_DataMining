@@ -1,0 +1,9 @@
+Team Name : OnlyGANs
+
+Member Details :
+1. Hrishav Raj - 2025AIB2562
+2. Peeyush Motwal - 2025AIB2564
+3. Sweta Das - 2025AIB3027
+
+GitHub Link : 
+https://github.com/Sweta-Das/IITD_DataMining
