@@ -21,7 +21,7 @@ echo "INFO: Compilation successful."
 
 # Create results file with header
 cd "$(dirname "$0")"
-echo "SupportThreshold,Algorithm,RunTime(ms)" > $RESULTS_FILE
+echo "SupportThreshold,Algorithm,RunTime(s)" > $RESULTS_FILE
 
 echo "INFO: Starting experiments. This may take some minutes..."
 
@@ -29,11 +29,11 @@ for support in "${SUPPORT_THRESHOLDS[@]}"; do
     echo "INFO: Running with support threshold: $support%"
 
     echo "  -> Apriori..."
-    RUNTIME=$( { TIMEFORMAT='%R'; time $APRIORI_EXEC -s $support $DATASET /dev/null;} 2>&1 )
+    RUNTIME=$( { TIMEFORMAT='%R'; time $APRIORI_EXEC -s$support $DATASET /dev/null 1>/dev/null 2>&1; } 2>&1 )
     echo "$support,Apriori,$RUNTIME" >> $RESULTS_FILE
 
     echo "  -> FP-Growth..."
-    RUNTIME=$( { TIMEFORMAT='%R'; time $FPGROWTH_EXEC -s$support $DATASET /dev/null; } 2>&1 )
+    RUNTIME=$( { TIMEFORMAT='%R'; time $FPGROWTH_EXEC -s $support $DATASET /dev/null 1>/dev/null 2>&1; } 2>&1 )
     echo "$support,FP-Growth,$RUNTIME" >> $RESULTS_FILE
 done
 

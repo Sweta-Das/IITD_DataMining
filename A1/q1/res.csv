@@ -1,0 +1,11 @@
+SupportThreshold,Algorithm,RunTime(ms)
+5,Apriori,0.004
+5,FP-Growth,40478.443
+10,Apriori,0.010
+10,FP-Growth,4342.452
+25,Apriori,0.004
+25,FP-Growth,1009.932
+50,Apriori,0.004
+50,FP-Growth,114.131
+90,Apriori,0.004
+90,FP-Growth,258.646
