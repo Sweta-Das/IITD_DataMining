@@ -1,5 +1,1 @@
-SupportThreshold,Algorithm,RunTime(ms)
-5,Apriori,./apriori/apriori/src/apriori - find frequent item sets with the apriori algorithm
-version 6.31 (2022.11.22)        (c) 1996-2022   Christian Borgelt
-./apriori/apriori/src/apriori: wrong number of arguments
-0.003
+SupportThreshold,Algorithm,RunTime(s)

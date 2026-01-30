@@ -6,3 +6,4 @@
 docs/
 dataset/
 *.o
+*.log
