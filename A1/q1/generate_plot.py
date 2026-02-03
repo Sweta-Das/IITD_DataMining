@@ -1,56 +1,45 @@
 import sys
-import pandas as pd
+import os
+import csv
 import matplotlib.pyplot as plt
+from collections import defaultdict
 
-def generate_plot(csv_pth, img_pth):
-    """Reads runtime CSV data and generates a comparison plot."""
-    try:
-        df = pd.read_csv(csv_pth)
-    except FileNotFoundError:
-        print(f"Error: {csv_pth} not found.")
+
+def generate_plot(csv_filename, output_filename):
+
+    if not os.path.exists(csv_filename):
+        print(f"ERROR: '{csv_filename}' not found.")
         return
-    
-    pivot_df = df.pivot(index='SupportThreshold', columns='Algorithm', values='Runtime(s)')
-    
-    plt.style.use('seaborn-v0_8-whitegrid')
-    fig, ax = plt.subplots(figsize=(10, 8))
 
-    ax.plot(
-        pivot_df.index,
-        pivot_df['Apriori'],
-        marker='o',
-        label='Apriori',
-        linestyle='-',
-        color='blue'
-    )
+    data = defaultdict(dict)
 
-    ax.plot(
-        pivot_df.index,
-        pivot_df['FP-Growth'],
-        marker='s',
-        label='FP-Growth',
-        linestyle='--',
-        color='orange'
-    )
+    # Read CSV manually
+    with open(csv_filename, newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            support = int(row['SupportThreshold'])
+            algo = row['Algorithm']
+            runtime = float(row['RunTime(s)'])
+            data[algo][support] = runtime
 
-    ax.set_title("Runtime Comparison: Apriori vs. FP-Growth", fontsize=14)
-    ax.set_xlabel("Support Threshold (%)", fontsize=12)
-    ax.set_ylabel("Runtime (seconds)", fontsize=12)
-    ax.set_xticks(df['SupportThreshold'].unique())
-    ax.set_yscale('log') # Best to see differences in runtime
-    ax.legend()
-    ax.grid(True, which="both", ls="-")
-    plt.tight_layout()
-    plt.savefig(img_pth)
+    supports = sorted({s for algo in data for s in data[algo]})
 
-    print(f"Plot saved to {img_pth}")
+    plt.figure(figsize=(10, 7))
 
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python generate_plot.py <input_csv_path> <output_image_path>")
-        sys.exit(1)
+    for algo in data:
+        runtimes = [data[algo][s] for s in supports]
+        plt.plot(supports, runtimes, marker='o', label=algo)
 
-    input_csv_path = sys.argv[1]
-    output_image_path = sys.argv[2]
+    plt.title('Performance Comparison: Apriori vs. FP-Growth')
+    plt.xlabel('Minimum Support Threshold (%)')
+    plt.ylabel('Runtime (seconds)')
+    plt.yscale('log')
+    plt.xticks(supports)
+    plt.legend()
 
-    generate_plot(input_csv_path, output_image_path)
+    plt.savefig(output_filename, dpi=300)
+    print(f"SUCCESS: Plot saved as '{output_filename}'")
+
+
+if __name__ == '__main__':
+    generate_plot(sys.argv[1], sys.argv[2])
