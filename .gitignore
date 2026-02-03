@@ -1,9 +1,16 @@
 .DS_Store
 *.docx
-*.png
 *.jpeg
 *.zip
 docs/
 dataset/
+submission/
 *.o
 *.log
+*.dat
+output_task*/
+*.png
+apriacc
+apriori
+fpgpsp
+fpgrowth
