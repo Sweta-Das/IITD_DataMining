@@ -1,6 +1,6 @@
 # IIT Delhi — Data Mining (COL761 / AIL7026): Assignments
 
-This repository contains my coursework for **Data Mining (COL761 / AIL7026)** at **IIT Delhi**, organized by assignment/homework.
+This repository contains our coursework for **Data Mining (COL761 / AIL7026)** at **IIT Delhi**, organized by assignment/homework.
 
 > Note: This is **not** an official course repository. If you’re taking the course, please follow the course’s collaboration / academic integrity policy—do not copy solutions.
 
