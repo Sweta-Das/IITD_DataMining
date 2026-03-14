@@ -10,16 +10,16 @@ def parse_item_rng(s):
 def create_syn_dataset(univ, n, out):
     import random
 
-    CORE_SIZE = 30      
-    CORE_SUPPORT = 0.60  
+    CORE_SIZE = 35   
+    CORE_SUPPORT = 0.88
 
-    MIN_CORE_PICK = 20    
-    MAX_CORE_PICK = 28   
+    MIN_CORE_PICK = 35
+    MAX_CORE_PICK = 35   
 
-    MIN_BG = 5
-    MAX_BG = 12
+    MIN_BG = 2
+    MAX_BG = 4
 
-    assert MAX_CORE_PICK <= CORE_SIZE
+    # assert MAX_CORE_PICK <= CORE_SIZE
 
     core = random.sample(univ, CORE_SIZE)
     rest = [x for x in univ if x not in core]
@@ -30,9 +30,9 @@ def create_syn_dataset(univ, n, out):
 
         # balanced dense-ish core 
         for _ in range(num_core):
-            k = random.randint(MIN_CORE_PICK, MAX_CORE_PICK)
-            txn = random.sample(core, k)
-            txn += random.sample(rest, random.randint(2, 5))
+            # k = random.randint(MIN_CORE_PICK, MAX_CORE_PICK)
+            # txn = random.sample(core, k)
+            txn = core + random.sample(rest, random.randint(2, 5))
             f.write(" ".join(map(str, sorted(txn))) + "\n")
 
         # background 

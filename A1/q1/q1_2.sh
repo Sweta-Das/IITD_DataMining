@@ -25,3 +25,12 @@ if [[ ! -f "$OUTPUT_DATASET_NAME" ]]; then
 fi
 
 echo "INFO: Dataset '$OUTPUT_DATASET_NAME' created successfully."
+
+APRIORI_PATH="./apriori/apriori/src/apriori"
+FP_PATH="./fpgrowth/fpgrowth/src/fpgrowth"
+OUT_DIR="./output_task1_2"
+
+echo "INFO: Running mining algorithms on generated dataset..."
+bash q1_1.sh "$APRIORI_PATH" "$FP_PATH" "$OUTPUT_DATASET_NAME" "$OUT_DIR"
+
+echo "INFO: Task 1.2 Pipeline Complete."

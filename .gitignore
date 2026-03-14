@@ -1,6 +1,12 @@
 .DS_Store
 *.docx
-*.png
 *.jpeg
 *.zip
-docs/
+apriori/
+fpgrowth/
+webdocs.dat
+output_task_1/
+webdocs.dat.gz
+*.npy
+report*
+.vscode/
