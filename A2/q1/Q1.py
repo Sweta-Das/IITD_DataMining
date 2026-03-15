@@ -25,6 +25,7 @@ def load_data(arg):
 
                 with open(f"dataset_{dataset_num}.npy", 'wb') as f:
                     np.save(f, np.array(data["X"]))
+
                 return np.array(data["X"])
             
         except ValueError:

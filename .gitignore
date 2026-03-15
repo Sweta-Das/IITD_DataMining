@@ -7,6 +7,5 @@ fpgrowth/
 webdocs.dat
 output_task_1/
 webdocs.dat.gz
-*.npy
 report*
 .vscode/
