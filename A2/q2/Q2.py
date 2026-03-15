@@ -29,7 +29,6 @@ def read_graph(graph_file, r):
                 edges_list.append((u, v, mask))
     return adj, edges_list
 
-
 def write_output(output_lines=None, edges_list=None, blocked_edges=None, out_file=None, k=None):
     out = list(output_lines[:k])
     e_idx = 0
@@ -73,7 +72,7 @@ def get_h_hop_reachability(r, A0, hops, adj, blocked, return_edges=False):
         total_reach += len(visited)
     return total_reach, candidate_edges
 
-def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
+def compute_dominator_gains(A0, adj, super_root, A0_set, r, blocked):
     marginal_gains = defaultdict(int)
     for i in range(r):
         local_adj = defaultdict(list)
@@ -130,9 +129,7 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
         while changed:
             changed = False
             for u in rpo:
-                if u == super_root: 
-                    continue
-
+                if u == super_root: continue
                 new_idom = None
                 for v in local_rev[u]:
                     if v in doms and doms[v] is not None:
@@ -154,25 +151,26 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
         dfs_out = {}
         timer = 0
         
-        stack_tree = [(super_root, False, 0)]
-        depth = {}
+        stack_tree = [(super_root, False)]
         while stack_tree:
-            u, is_post, d = stack_tree.pop()
+            u, is_post = stack_tree.pop()
             if is_post:
                 size = (1 if u != super_root and u not in A0_set else 0)
                 for c in dom_children[u]:
                     size += subtree_size[c]
                 subtree_size[u] = size
+                timer += 1
+                dfs_out[u] = timer
             else:
-                depth[u] = d
-                stack_tree.append((u, True, d))
+                timer += 1
+                dfs_in[u] = timer
+                stack_tree.append((u, True))
                 for c in reversed(dom_children[u]):
-                    stack_tree.append((c, False, d + 1))
+                    stack_tree.append((c, False))
         
         for v in rpo:
             if v == super_root or v in A0_set:
                 continue
-
             idom_v = doms[v]
             if idom_v == super_root:
                 continue
@@ -187,8 +185,7 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
                 
             is_bridge = True
             for w in local_rev[v]:
-                if w == idom_v: 
-                    continue
+                if w == idom_v: continue
                 if w not in dfs_in: 
                     is_bridge = False
                     break
@@ -197,8 +194,7 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
                     break
             
             if is_bridge:
-                depth_weight = 1.0 / (depth[v] + 1)
-                marginal_gains[(idom_v, v)] += subtree_size[v] * depth_weight
+                marginal_gains[(idom_v, v)] += subtree_size[v]
                 
     return marginal_gains
 
@@ -348,11 +344,11 @@ def main():
         super_root = -1
         A0_set = set(A0)
         
+        
         for step in range(k):
             if time.time() - start_time > TIME_LIMIT:
                 break
-
-            gains = compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked_edges)
+            gains = compute_dominator_gains(A0, adj, super_root, A0_set, r, blocked_edges)
             if not gains:
                 break
             
@@ -360,6 +356,7 @@ def main():
             blocked_edges.add(best_edge)
             output_lines.append(best_edge)
             write_output(output_lines, edges_list, blocked_edges, out_file, k)
+
 
 if __name__ == "__main__":
     main()
