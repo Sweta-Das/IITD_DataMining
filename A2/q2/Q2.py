@@ -174,6 +174,7 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
         for v in rpo:
             if v == super_root or v in A0_set:
                 continue
+
             idom_v = doms[v]
             if idom_v == super_root:
                 continue
@@ -188,7 +189,8 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
                 
             is_bridge = True
             for w in local_rev[v]:
-                if w == idom_v: continue
+                if w == idom_v: 
+                    continue
                 if w not in dfs_in: 
                     is_bridge = False
                     break
@@ -197,10 +199,36 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
                     break
             
             if is_bridge:
-                marginal_gains[(idom_v, v)] += subtree_size[v]
+                depth_weight = 1.0 / (dfs_in[v] + 1)
+                marginal_gains[(idom_v, v)] += subtree_size[v] * depth_weight
                 
     return marginal_gains
 
+def generate_rr_scores(adj, rev_graph, num_samples=400):
+    edge_score = defaultdict(int)
+    nodes = list({u for u in adj} | {v for u in adj for v, _ in adj[u]})
+
+    for _ in range(num_samples):
+        v = random.choice(nodes)
+
+        visited = {v}
+        stack = [v]
+
+        while stack:
+            x = stack.pop()
+            for u, mask in rev_graph.get(x, []):
+                if u not in visited:
+                    visited.add(u)
+                    stack.append(u)
+                    edge_score[(u, x)] += 1
+    return edge_score
+
+def build_reverse_graph(adj):
+    rev = defaultdict(list)
+    for u in adj:
+        for v, mask in adj[u]:
+            rev[v].append((u, mask))
+    return rev
 
 def main():
     if len(sys.argv) < 7:
@@ -229,16 +257,27 @@ def main():
     # Graph input
     adj, edges_list = read_graph(graph_file, r)
     adj = {u: adj[u] for u in adj}
+
+    # Build reverse graph
+    rev_graph = build_reverse_graph(adj)
+    rr_scores = generate_rr_scores(adj, rev_graph)
     
     # Initialize blocked edges and output lines
     blocked_edges = set()
     output_lines = []
     write_output(output_lines, edges_list, blocked_edges, out_file, k)
+    valid_edges = {(u, v) for u, v, _ in edges_list}
     
     if hops != -1:
         
+        candidate_limit = max(10 * k, int(0.01 * len(edges_list)))
+        top_rr = heapq.nlargest(candidate_limit, rr_scores.items(), key=lambda x: x[1])
+        rr_candidates = {
+            e for e, _ in top_rr if e in valid_edges
+        }
         current_reach, candidates = get_h_hop_reachability(r, A0, hops, adj, blocked_edges, return_edges=True)
-        
+        candidates = candidates | rr_candidates
+
         celf_queue = []
         seen_candidates = set()
 
@@ -306,7 +345,7 @@ def main():
                 write_output(output_lines, edges_list, blocked_edges, out_file, k)
             else:
                 break
-            
+
     else:
         super_root = -1
         A0_set = set(A0)
