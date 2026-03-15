@@ -240,21 +240,48 @@ def main():
         current_reach, candidates = get_h_hop_reachability(r, A0, hops, adj, blocked_edges, return_edges=True)
         
         celf_queue = []
+        seen_candidates = set()
+
         for e in candidates:
+            if e in seen_candidates:
+                continue
+            seen_candidates.add(e)
+
             blocked_edges.add(e)
             new_reach, _ = get_h_hop_reachability(r, A0, hops, adj, blocked_edges)
             blocked_edges.remove(e)
+
             gain = current_reach - new_reach
             if gain > 0:
                 celf_queue.append((-gain, e))
+
         heapq.heapify(celf_queue)
+        REFRESH_INTERVAL = 10
 
         for step in range(k):
             best_edge = None
             
             if time.time() - start_time > TIME_LIMIT:
                 break
+            
+            if step % REFRESH_INTERVAL == 0:
+                _, new_candidates = get_h_hop_reachability(
+                    r, A0, hops, adj, blocked_edges, return_edges=True
+                )
+                for e in new_candidates:
+                    if e in seen_candidates or e in blocked_edges:
+                        continue
+                    seen_candidates.add(e)
 
+                    blocked_edges.add(e)
+                    new_reach, _ = get_h_hop_reachability(
+                        r, A0, hops, adj, blocked_edges
+                    )
+                    blocked_edges.remove(e)
+                    gain = current_reach - new_reach
+                    if gain > 0:
+                        heapq.heappush(celf_queue, (-gain, e))
+                    
             while celf_queue:
                 neg_gain, e = heapq.heappop(celf_queue)
                 
@@ -279,7 +306,7 @@ def main():
                 write_output(output_lines, edges_list, blocked_edges, out_file, k)
             else:
                 break
-                
+            
     else:
         super_root = -1
         A0_set = set(A0)
@@ -287,7 +314,7 @@ def main():
         for step in range(k):
             if time.time() - start_time > TIME_LIMIT:
                 break
-            
+
             gains = compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked_edges)
             if not gains:
                 break
