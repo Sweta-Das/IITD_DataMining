@@ -154,22 +154,20 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
         dfs_out = {}
         timer = 0
         
-        stack_tree = [(super_root, False)]
+        stack_tree = [(super_root, False, 0)]
+        depth = {}
         while stack_tree:
-            u, is_post = stack_tree.pop()
+            u, is_post, d = stack_tree.pop()
             if is_post:
                 size = (1 if u != super_root and u not in A0_set else 0)
                 for c in dom_children[u]:
                     size += subtree_size[c]
                 subtree_size[u] = size
-                timer += 1
-                dfs_out[u] = timer
             else:
-                timer += 1
-                dfs_in[u] = timer
-                stack_tree.append((u, True))
+                depth[u] = d
+                stack_tree.append((u, True, d))
                 for c in reversed(dom_children[u]):
-                    stack_tree.append((c, False))
+                    stack_tree.append((c, False, d + 1))
         
         for v in rpo:
             if v == super_root or v in A0_set:
@@ -199,7 +197,7 @@ def compute_dominator_gains(A0, A0_set, adj, r, super_root, blocked):
                     break
             
             if is_bridge:
-                depth_weight = 1.0 / (dfs_in[v] + 1)
+                depth_weight = 1.0 / (depth[v] + 1)
                 marginal_gains[(idom_v, v)] += subtree_size[v] * depth_weight
                 
     return marginal_gains
