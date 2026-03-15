@@ -4,6 +4,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
 
 def load_data(arg):
     """Load dataset from either a .npy file or a URL based on the argument."""
@@ -75,16 +76,23 @@ def main():
         sys.exit(1)
 
     inertias = []
-
+    silhouette_avg = []
     max_k = min(15, len(X))
     k_range = list(range(1, max_k + 1))
 
     for k in k_range:
         kmeans = KMeans(n_clusters=k, random_state=42, n_init='auto')
+        cluster_labels = kmeans.fit_predict(X)
         kmeans.fit(X)
         inertias.append(kmeans.inertia_)
-        
+
+        if k > 1:
+            silhouette_avg.append(silhouette_score(X, cluster_labels))
+        else:
+            silhouette_avg.append(0)
+
     optimal_k = find_elbow_point(k_range, inertias)
+    optimal_k_sil = k_range[np.argmax(silhouette_avg)]
 
     plt.figure()
     plt.plot(k_range, inertias, 'bo-')
@@ -98,6 +106,22 @@ def main():
     plt.savefig('plot.png')
     
     print(optimal_k)
+
+    fig, ax1 = plt.subplots()
+
+    ax1.set_xlabel('Number of clusters (k)')
+    ax1.set_ylabel('Inertia (Lower is better)', color='blue')
+    ax1.plot(k_range, inertias, 'bo-', label='Inertia')
+    ax1.tick_params(axis='y', labelcolor='blue')
+
+    ax2 = ax1.twinx() 
+    ax2.set_ylabel('Silhouette Score (Higher is better)', color='green')
+    ax2.plot(k_range, silhouette_avg, 'gs-', label='Silhouette Score')
+    ax2.tick_params(axis='y', labelcolor='green')
+
+    plt.title('Elbow and Silhouette Analysis')
+    fig.tight_layout()
+    plt.savefig(f'dataset_{arg}_plot2.png')
 
 if __name__ == "__main__":
     main()
