@@ -29,18 +29,11 @@ def read_graph(graph_file, r):
                 edges_list.append((u, v, mask))
     return adj, edges_list
 
-def write_output(output_lines=None, edges_list=None, blocked_edges=None, out_file=None, k=None):
+def write_output(output_lines=None, out_file=None, k=None):
+    # Write only the edges actually selected so far.
+    # Padding with fake edges can make the blocked file invalid.
     out = list(output_lines[:k])
-    e_idx = 0
-    while len(out) < k and e_idx < len(edges_list):
-        e = edges_list[e_idx]
-        tupe = (e[0], e[1])
-        if tupe not in blocked_edges:
-            out.append(tupe)
-        e_idx += 1
-    while len(out) < k:
-        out.append((0, 0))
-        
+
     with open(out_file, 'w') as f:
         for u, v in out:
             f.write(f"{u} {v}\n")
@@ -259,7 +252,7 @@ def main():
     # Initialize blocked edges and output lines
     blocked_edges = set()
     output_lines = []
-    write_output(output_lines, edges_list, blocked_edges, out_file, k)
+    write_output(output_lines, out_file, k)
     valid_edges = {(u, v) for u, v, _ in edges_list}
     
     if hops != -1:
@@ -336,7 +329,7 @@ def main():
             if best_edge:
                 blocked_edges.add(best_edge)
                 output_lines.append(best_edge)
-                write_output(output_lines, edges_list, blocked_edges, out_file, k)
+                write_output(output_lines, out_file, k)
             else:
                 break
 
@@ -355,7 +348,7 @@ def main():
             best_edge = max(gains.items(), key=lambda x: x[1])[0]
             blocked_edges.add(best_edge)
             output_lines.append(best_edge)
-            write_output(output_lines, edges_list, blocked_edges, out_file, k)
+            write_output(output_lines, out_file, k)
 
 
 if __name__ == "__main__":

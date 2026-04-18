@@ -10,3 +10,4 @@ webdocs.dat.gz
 report*
 submission/
 .vscode/
+__pycache__/
