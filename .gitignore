@@ -11,3 +11,4 @@ report*
 submission/
 .vscode/
 __pycache__/
+A3_datasets/
