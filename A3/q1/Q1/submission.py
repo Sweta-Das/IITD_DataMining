@@ -59,7 +59,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
         # expected build cost is safely below the wall-clock limit.
         hnsw_est_secs = N * 50e-6
 
-        if hnsw_est_secs < 0.30 * budget:
+        if hnsw_est_secs < 0.45 * budget:
             # ── HNSW ──────────────────────────────────────────────────────
             p_time = time.perf_counter()
             index = faiss.IndexHNSWFlat(d, 12)
@@ -106,7 +106,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
             elif budget >= 30:
                 index.nprobe = min(nlist, 16)
             else:
-                index.nprobe = min(nlist, 8)
+                index.nprobe = min(nlist, 10)
 
     # ── ANN search ─────────────────────────────────────────────────────────
     p_search = time.perf_counter()
