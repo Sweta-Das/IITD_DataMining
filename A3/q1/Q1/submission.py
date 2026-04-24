@@ -19,17 +19,11 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
     Index selection (adaptive to N and time_budget)
     ------------------------------------------------
     - Tiny  (N ≤ 80 000)       : exact IndexFlatL2 – always fast enough.
-    - Small/medium (HNSW fits)  : IndexHNSWFlat M=16.
-      HNSW builds in ~40 µs/vector. We use it when the estimated build time
-      < 35 % of the budget so there is plenty of time for queries.
-      efSearch is calibrated on remaining time after build.
-    - Large / tight budget      : IndexIVFFlat.
-      nlist ≈ 4√N (clamped to [64, 8192]).
-      Training uses 20 × nlist samples (minimal valid set) for tight budgets
-      so more wall-time remains for the actual search phase.
-      nprobe is calibrated by timing 2 000 probe queries at nprobe=8,
-      extrapolating to the full query set, and fitting as many probes
-      as possible in the remaining time minus a 2 s safety margin.
+    - Safe HNSW window          : IndexHNSWFlat with conservative build
+      parameters, used only when the estimated build cost is comfortably
+      below the time budget.
+    - Otherwise                 : lightweight IndexIVFFlat fallback with a
+      smaller coarse quantizer and no probe calibration.
     """
     import faiss
 
@@ -53,78 +47,66 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
     log_stage("preprocess", time.perf_counter() - p_time)
 
     # ── Index selection ────────────────────────────────────────────────────
-    HNSW_BUILD_US   = 40e-6      # conservative: 40 µs / vector for M=16
-    hnsw_est_secs   = N * HNSW_BUILD_US
-
     if N <= 80_000:
         # ── Exact search ───────────────────────────────────────────────────
         p_time = time.perf_counter()
         index = faiss.IndexFlatL2(d)
         index.add(base)
         log_stage("index_build", time.perf_counter() - p_time)
-
-    elif hnsw_est_secs < 0.35 * budget:
-        # ── HNSW ──────────────────────────────────────────────────────────
-        # High-recall graph index; fast queries after one-time build.
-        p_time = time.perf_counter()
-        index = faiss.IndexHNSWFlat(d, 16)
-        index.hnsw.efConstruction = 100
-        index.add(base)                        # graph built here
-        log_stage("index_build", time.perf_counter() - p_time)
-
-        rem = budget - t()
-        if   rem > 40: index.hnsw.efSearch = 256
-        elif rem > 20: index.hnsw.efSearch = 128
-        elif rem > 10: index.hnsw.efSearch = 64
-        else:          index.hnsw.efSearch = 32
-
     else:
-        # ── IVFFlat with calibrated nprobe ─────────────────────────────────
-        p_time = time.perf_counter()
-        nlist = int(np.clip(4 * np.sqrt(N), 64, 8192))
+        # Conservative estimate for HNSW build time. The earlier pure-HNSW
+        # attempt exceeded the D2 budget, so we only use HNSW when the
+        # expected build cost is safely below the wall-clock limit.
+        hnsw_est_secs = N * 50e-6
 
-        # Use fewer training samples for tight budgets so more time is
-        # left for the actual ANN search (each extra nprobe matters a lot).
-        if   budget >= 60: train_factor = 50
-        elif budget >= 30: train_factor = 30
-        else:              train_factor = 20   # minimum viable; FAISS warns
-                                               # but empirically gives better
-                                               # nDCG than spending 6 s extra
-                                               # on training.
+        if hnsw_est_secs < 0.30 * budget:
+            # ── HNSW ──────────────────────────────────────────────────────
+            p_time = time.perf_counter()
+            index = faiss.IndexHNSWFlat(d, 12)
 
-        train_size = min(N, train_factor * nlist)
-        rng = np.random.default_rng(42)
+            if budget >= 60:
+                index.hnsw.efConstruction = 96
+            elif budget >= 30:
+                index.hnsw.efConstruction = 64
+            else:
+                index.hnsw.efConstruction = 48
 
-        quantizer = faiss.IndexFlatL2(d)
-        index = faiss.IndexIVFFlat(quantizer, d, nlist, faiss.METRIC_L2)
-        p_train = time.perf_counter()
-        index.train(base[rng.choice(N, train_size, replace=False)])
-        log_stage("index_train", time.perf_counter() - p_train)
-        p_add = time.perf_counter()
-        index.add(base)
-        log_stage("index_add", time.perf_counter() - p_add)
-        log_stage("index_build", time.perf_counter() - p_time)
+            index.add(base)
+            log_stage("index_build", time.perf_counter() - p_time)
 
-        # ── Calibrate nprobe ──────────────────────────────────────────────
-        # Time 2000 queries at nprobe=8, then extrapolate to full Q.
-        probe_nprobe = 8
-        probe_size   = min(Q, 2000)
+            rem = budget - t()
+            if rem > 40:
+                index.hnsw.efSearch = 96
+            elif rem > 20:
+                index.hnsw.efSearch = 64
+            else:
+                index.hnsw.efSearch = 32
 
-        index.nprobe = probe_nprobe
-        p_probe = time.perf_counter()
-        index.search(queries[:probe_size], k)
-        probe_seconds = time.perf_counter() - p_probe
-        log_stage("probe_calibration", probe_seconds)
-        t_per_np = probe_seconds / probe_nprobe * (Q / probe_size)
-        # t_per_np = estimated seconds per one nprobe unit for the full Q
-
-        safety   = 2.0                # reserve 2 s to avoid wall-clock overshoot
-        rem      = budget - t() - safety
-        if rem <= 0.0:
-            nprobe = 1
         else:
-            nprobe = int(np.clip(rem / max(t_per_np, 1e-3), 1, nlist))
-        index.nprobe = nprobe
+            # ── Light IVF fallback ───────────────────────────────────────
+            p_time = time.perf_counter()
+            nlist = int(np.clip(np.sqrt(N), 64, 1024))
+            train_size = min(N, 40 * nlist)
+            rng = np.random.default_rng(42)
+
+            quantizer = faiss.IndexFlatL2(d)
+            index = faiss.IndexIVFFlat(quantizer, d, nlist, faiss.METRIC_L2)
+
+            p_train = time.perf_counter()
+            index.train(base[rng.choice(N, train_size, replace=False)])
+            log_stage("index_train", time.perf_counter() - p_train)
+
+            p_add = time.perf_counter()
+            index.add(base)
+            log_stage("index_add", time.perf_counter() - p_add)
+            log_stage("index_build", time.perf_counter() - p_time)
+
+            if budget >= 60:
+                index.nprobe = min(nlist, 32)
+            elif budget >= 30:
+                index.nprobe = min(nlist, 16)
+            else:
+                index.nprobe = min(nlist, 8)
 
     # ── ANN search ─────────────────────────────────────────────────────────
     p_search = time.perf_counter()
