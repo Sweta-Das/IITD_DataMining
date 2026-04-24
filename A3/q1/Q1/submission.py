@@ -106,7 +106,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
             elif budget >= 30:
                 index.nprobe = min(nlist, 16)
             else:
-                index.nprobe = min(nlist, 10)
+                index.nprobe = min(nlist, 9)
 
     # ── ANN search ─────────────────────────────────────────────────────────
     p_search = time.perf_counter()
