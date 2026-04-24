@@ -101,12 +101,23 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
             log_stage("index_add", time.perf_counter() - p_add)
             log_stage("index_build", time.perf_counter() - p_time)
 
-            if budget >= 60:
-                index.nprobe = min(nlist, 32)
-            elif budget >= 30:
-                index.nprobe = min(nlist, 16)
-            else:
-                index.nprobe = min(nlist, 9)
+            # Pilot-based probe selection keeps the fallback adaptive across
+            # different hidden datasets and runtime environments.
+            pilot_nprobe = 4
+            pilot_queries = min(Q, 50)
+            safety_margin = 0.75
+
+            index.nprobe = pilot_nprobe
+            p_probe = time.perf_counter()
+            index.search(queries[:pilot_queries], k)
+            pilot_seconds = time.perf_counter() - p_probe
+            log_stage("probe_calibration", pilot_seconds)
+
+            t_per_nprobe = (pilot_seconds / pilot_nprobe) * (Q / pilot_queries)
+            rem = budget - t() - safety_margin
+            nprobe = int(np.clip(rem / max(t_per_nprobe, 1e-3), 4, 32))
+            index.nprobe = min(nprobe, nlist)
+            log_stage("nprobe_selected", float(index.nprobe))
 
     # ── ANN search ─────────────────────────────────────────────────────────
     p_search = time.perf_counter()
