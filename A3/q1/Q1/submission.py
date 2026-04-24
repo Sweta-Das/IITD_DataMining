@@ -103,7 +103,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
 
             # Pilot-based probe selection keeps the fallback adaptive across
             # different hidden datasets and runtime environments.
-            pilot_nprobe = 4
+            pilot_nprobe = 8
             pilot_queries = min(Q, 50)
             safety_margin = 0.75
 
@@ -115,7 +115,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
 
             t_per_nprobe = (pilot_seconds / pilot_nprobe) * (Q / pilot_queries)
             rem = budget - t() - safety_margin
-            nprobe = int(np.clip(rem / max(t_per_nprobe, 1e-3), 4, 32))
+            nprobe = int(np.clip(rem / max(t_per_nprobe, 1e-3), 8, 32))
             index.nprobe = min(nprobe, nlist)
             log_stage("nprobe_selected", float(index.nprobe))
 
