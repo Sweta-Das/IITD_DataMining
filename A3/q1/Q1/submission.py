@@ -40,11 +40,17 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
         if debug_timing:
             print(f"[timing] {name}: {seconds:.6f}s", file=sys.stderr)
 
+    def log_value(name: str, value: float) -> None:
+        if debug_timing:
+            print(f"[info] {name}: {value}", file=sys.stderr)
+
     # ── Pre-process ────────────────────────────────────────────────────────
     p_time = time.perf_counter()
     base    = np.ascontiguousarray(base_vectors,  dtype=np.float32)
     queries = np.ascontiguousarray(query_vectors, dtype=np.float32)
     log_stage("preprocess", time.perf_counter() - p_time)
+    log_value("N_base", float(N))
+    log_value("Q_queries", float(Q))
 
     # ── Index selection ────────────────────────────────────────────────────
     if N <= 80_000:
