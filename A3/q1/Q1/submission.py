@@ -32,6 +32,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
     Q      = len(query_vectors)
     budget = max(0.0, float(time_budget))
     debug_timing = os.environ.get("Q1_TIMING", "0") == "1"
+    ivf_nlist_scale = float(os.environ.get("Q1_IVF_NLIST_SCALE", "1.0"))
 
     def t():
         return time.perf_counter() - start
@@ -91,7 +92,7 @@ def solve(base_vectors, query_vectors, k, K, time_budget):
         else:
             # ── Light IVF fallback ───────────────────────────────────────
             p_time = time.perf_counter()
-            nlist = int(np.clip(np.sqrt(N), 64, 1024))
+            nlist = int(np.clip(np.sqrt(N) * ivf_nlist_scale, 64, 1024))
             train_size = min(N, 40 * nlist)
             rng = np.random.default_rng(42)
 
