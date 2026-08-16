@@ -1,79 +1,85 @@
-# Assignment 1 (A1) — COL761 / AIL7026 Data Mining
+# Assignment 1
 
-This folder contains our solutions and helper scripts for **Assignment 1**.
+This folder contains the code and scripts for Assignment 1 of COL761 / AIL7026.
 
-## Folder layout
+Problem statement:
 
-- `docs/` — problem statement PDF
-- `q1/` — frequent itemset mining (Apriori vs FP-Growth), dataset generation, plots
-- `q2/` — frequent subgraph mining comparison (gSpan vs FSG vs Gaston), timing + plot
-- `q3/` — graph utilities + scripts (see `q3.pdf`)
+- [A1 PDF](docs/2502_COL761_A1_final.pdf)
+
+## Contents
+
+- `q1/` - frequent itemset mining experiments, including Apriori vs FP-Growth
+- `q2/` - frequent subgraph mining comparison across gSpan, FSG, and Gaston
+- `q3/` - graph utilities and discriminative subgraph identification scripts
 
 ## Requirements
 
 - `python3`
-- Some scripts use common CLI tools:
-  - `timeout` (Linux) or `gtimeout` (macOS via `coreutils`)
-  - `bc`
-- Some questions expect **external algorithm implementations/binaries** (not necessarily tracked in this repo). See the per-question usage below.
+- Standard shell tools such as `make`, `timeout` or `gtimeout`, and `bc`
+- External binaries for some questions, if you are running the full pipelines locally
 
-## Q1 — Frequent Itemset Mining
+## Q1
 
-Location: `A1/q1/`
+Question 1 is split into two parts and lives in `A1/q1/`.
 
-### Task 1.1: Run Apriori vs FP-Growth
+### Task 1.1
+
+Runs Apriori and FP-Growth over a dataset at multiple support thresholds.
 
 ```bash
 cd A1/q1
 bash q1_1.sh <apriori_exec> <fpgrowth_exec> <dataset> <out_dir>
 ```
 
-Notes:
-- `q1_1.sh` attempts a local `make` under `./apriori/...` and `./fpgrowth/...` if those directories exist.
-- Outputs a `results.csv` in `<out_dir>` plus per-run output files.
+Outputs:
 
-### Task 1.2: Generate dataset + run mining
+- `results.csv`
+- per-run algorithm output files in `<out_dir>`
+- `plot.png` if plotting succeeds
+
+### Task 1.2
+
+Generates a synthetic transaction dataset and then reuses Task 1.1.
 
 ```bash
 cd A1/q1
 bash q1_2.sh <universal_itemset> <num_transactions>
 ```
 
-This generates `generated_transactions.dat` (in `A1/q1/`) and runs `q1_1.sh` on it.
+This writes `generated_transactions.dat` and then launches the comparison pipeline.
 
-## Q2 — Frequent Subgraph Mining Comparison
+## Q2
 
-Location: `A1/q2/`
-
-Run the full pipeline (convert dataset formats → run algorithms at multiple supports → plot):
+Question 2 lives in `A1/q2/` and compares frequent subgraph mining implementations.
 
 ```bash
 cd A1/q2
 bash q2.sh <gspan_exe> <fsg_exe> <gaston_exe> <dataset> <out_dir>
 ```
 
-Outputs:
-- Per-support outputs like `gspan5`, `fsg10`, `gaston50`, ...
-- `timing_results.json`
-- `plot.png` (performance comparison)
+The script:
 
-## Q3 — Graph scripts
+- converts the input dataset into the formats expected by the three miners
+- runs each miner across multiple support values
+- writes timing data to `timing_results.json`
+- generates `plot.png`
 
-Location: `A1/q3/`
+## Q3
 
-Set up a local venv for this question:
+Question 3 lives in `A1/q3/` and focuses on graph processing helpers and discriminative subgraph identification.
+
+Typical setup:
 
 ```bash
 cd A1/q3
 bash env.sh
 ```
 
-Run discriminative subgraph identification:
+Run the main identification pipeline with:
 
 ```bash
 cd A1/q3
 bash identify.sh <graph_dataset> <discriminative_subgraphs_out>
 ```
 
-Other helpers live in the same folder (`convert.sh`, `generate_candidates.sh`, `match.py`, etc.). Refer to `A1/q3/q3.pdf` for expected inputs/outputs.
-
+Supporting scripts in the same folder include `convert.sh`, `convert.py`, `generate_candidates.sh`, `match.py`, and `graph_utils.py`. See [q3.pdf](q3/q3.pdf) for the expected inputs and outputs.

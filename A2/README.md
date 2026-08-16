@@ -1,17 +1,20 @@
-# Assignment 2 (A2) — COL761 / AIL7026 Data Mining
+# Assignment 2
 
-This folder contains our solutions and helper scripts for **Assignment 2**.
+This folder contains the code and scripts for Assignment 2 of COL761 / AIL7026.
 
-## Folder layout
+Problem statement:
 
-- `docs/` — problem statement PDF
-- `requirements.txt` — Python dependencies used for A2
-- `q1/` — KMeans + elbow method; saves `plot.png` and prints optimal `k`
-- `q2/` — forest-fire blocking algorithm implementation + evaluator
+- [A2 PDF](docs/2502_COL761_A2.pdf)
+
+## Contents
+
+- `q1/` - KMeans clustering and elbow-method analysis
+- `q2/` - forest-fire spread / edge-blocking optimization and evaluation
+- `requirements.txt` - Python dependencies for this assignment
 
 ## Setup
 
-Create a virtual environment and install dependencies:
+Create a virtual environment and install the dependencies from the assignment root:
 
 ```bash
 cd A2
@@ -20,42 +23,42 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Q1 — KMeans + elbow method
+## Q1
 
-Location: `A2/q1/`
-
-Run with a dataset number (downloads from the course server) **or** with a local `.npy` file:
+Question 1 lives in `A2/q1/` and runs KMeans on a dataset either fetched from the course server or loaded from a local `.npy` file.
 
 ```bash
 cd A2/q1
 python3 Q1.py 1
-# or
 python3 Q1.py dataset_1.npy
 ```
 
-Notes:
-- Download mode requires network access and uses a hard-coded `student_id` in `Q1.py`.
+Behavior:
 
-Outputs:
-- Prints the selected `k` to stdout
-- Writes `plot.png` in the current working directory (typically `A2/q1/`)
+- prints the selected `k` to stdout
+- writes `plot.png`
+- also writes a second diagnostic plot named `dataset_<arg>_plot2.png`
 
-## Q2 — Forest fire spread (edge blocking)
+Note:
 
-Location: `A2/q2/`
+- download mode requires network access and uses the student id embedded in `Q1.py`
 
-### Run the solver
+## Q2
 
-`Q2.py` usage:
+Question 2 lives in `A2/q2/` and solves the forest-fire edge-blocking problem.
+
+Run the solver directly:
 
 ```bash
 cd A2/q2
 python3 Q2.py <graph_file> <seed_file> <out_file> <k> <r> <hops>
 ```
 
-- `k`: number of edges to output/block
-- `r`: number of Monte-Carlo realizations
-- `hops`: `-1` for unlimited, else restrict spread to that many hops
+Arguments:
+
+- `k` - number of edges to block
+- `r` - number of Monte Carlo realizations
+- `hops` - `-1` for unlimited propagation, otherwise a hop limit
 
 Convenience wrapper:
 
@@ -64,24 +67,14 @@ cd A2/q2
 bash forest_fire.sh <graph_file> <seed_file> <out_file> <k> <r> <hops>
 ```
 
-Included datasets:
-- `A2/q2/dataset1/` (`config.txt`: `k 50`, `num_sim 50`, `hops -1`)
-- `A2/q2/dataset2/` (`config.txt`: `k 30`, `num_sim 50`, `hops 3`)
-
-### Evaluate an output
-
-Evaluator script:
+Evaluation:
 
 ```bash
 cd A2/q2
 bash Eval/evaluate.sh <graph_file> <seed_file> <blocked_file> <k> <num_sim> [hops]
 ```
 
-Note: the evaluator comments mention absolute paths, but relative paths also work when you run it from `A2/q2/`.
+Included sample datasets:
 
-Example (dataset1):
-
-```bash
-cd A2/q2
-bash Eval/evaluate.sh dataset1/dataset_1.txt dataset1/seedset_1.txt dataset1/output.txt 50 50 -1
-```
+- `A2/q2/dataset1/` - `k 50`, `num_sim 50`, `hops -1`
+- `A2/q2/dataset2/` - `k 30`, `num_sim 50`, `hops 3`
